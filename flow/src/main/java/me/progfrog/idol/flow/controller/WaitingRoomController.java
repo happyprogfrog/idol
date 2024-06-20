@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.reactive.result.view.Rendering;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 @Controller
@@ -22,11 +23,14 @@ public class WaitingRoomController {
      */
     @GetMapping("/waiting-room")
     Mono<Rendering> getWaitingRoomPage(@RequestParam(name = "queue", defaultValue = "default") String queue,
-                                       @RequestParam(name = "user-id") Long userId) {
+                                       @RequestParam(name = "user-id") Long userId,
+                                       @RequestParam(name = "redirect-url") String redirectUrl,
+                                       ServerWebExchange exchange) {
+        var key = "user-queue-%s-token".formatted(queue);
+        var cookieValue = exchange.getRequest().getCookies().getFirst(key);
+        var token = (cookieValue == null) ? "" : cookieValue.getValue();
 
-        String redirectUrl = "http://www.naver.com";
-
-        return userQueueService.isAllowed(queue, userId)
+        return userQueueService.isAllowedByToken(queue, userId, token)
                 .filter(isAllowed -> isAllowed)
                 .flatMap(isAllowed -> Mono.just(Rendering.redirectTo(redirectUrl).build()))
                 .switchIfEmpty(userQueueService.registerWaitingQueueOrGetQueueStatus(queue, userId)

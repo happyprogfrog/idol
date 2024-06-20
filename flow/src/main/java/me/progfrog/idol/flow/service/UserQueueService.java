@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -78,6 +81,22 @@ public class UserQueueService {
         return reactiveRedisTemplate.opsForZSet().rank(USER_QUEUE_ALLOW_KEY.formatted(queue), userId.toString())
                 .defaultIfEmpty(-1L)
                 .map(rank -> rank >= 0);
+    }
+
+    /**
+     * 토큰이 일치하는 지 확인
+     *
+     * @param queue 입장 큐 이름
+     * @param userId 사용자 ID
+     * @param token 전달된 토큰
+     * @return 입장 가능 여부
+     */
+    public Mono<Boolean> isAllowedByToken(final String queue, final Long userId, final String token) {
+        log.info("token: {}", token);
+        return this.generateToken(queue, userId)
+                .filter(generatedToken -> generatedToken.equalsIgnoreCase(token))
+                .map(isMatching -> true)
+                .defaultIfEmpty(false);
     }
 
     /**
@@ -178,6 +197,52 @@ public class UserQueueService {
         }
 
         return 100.0 / userRank.doubleValue();
+    }
+
+    /**
+     * 토큰 생성
+     *
+     * @param queue 큐 이름
+     * @param userId 사용자 ID
+     * @return 생성된 토큰 (queue 와 userId 가 같다면 항상 같은 토큰이 나옴)
+     */
+    public Mono<String> generateToken(final String queue, final Long userId) {
+        String input = String.format("user-queue-%s-%d", queue, userId);
+        return Mono.fromSupplier(() -> {
+            try {
+                return hashToHex(input, "SHA-256");
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("해당 알고리즘을 지원하지 않습니다.", e);
+            }
+        });
+    }
+
+    /**
+     * 해시 값 계산
+     *
+     * @param input 입력 문자열
+     * @param algorithm 알고리즘 ex) SHA-256
+     * @return 16진수 문자열
+     * @throws NoSuchAlgorithmException algorithm 을 잘못 설정된 경우
+     */
+    private String hashToHex(String input, String algorithm) throws NoSuchAlgorithmException {
+        MessageDigest messageDigest = MessageDigest.getInstance(algorithm);
+        byte[] encodedHash = messageDigest.digest(input.getBytes(StandardCharsets.UTF_8));
+        return bytesToHex(encodedHash);
+    }
+
+    /**
+     * 16진수 문자열로 변환
+     *
+     * @param bytes 해시 값(바이트 배열)
+     * @return 16진수 문자열
+     */
+    private String bytesToHex(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : bytes) {
+            hexString.append(String.format("%02x", b));
+        }
+        return hexString.toString();
     }
 
     /**

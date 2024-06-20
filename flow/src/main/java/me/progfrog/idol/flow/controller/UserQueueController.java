@@ -6,8 +6,12 @@ import me.progfrog.idol.flow.dto.AllowedUserResponse;
 import me.progfrog.idol.flow.dto.QueueStatusResponse;
 import me.progfrog.idol.flow.dto.RegisterUserResponse;
 import me.progfrog.idol.flow.service.UserQueueService;
+import org.springframework.http.ResponseCookie;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+
+import java.time.Duration;
 
 @RestController
 @RequiredArgsConstructor
@@ -54,8 +58,9 @@ public class UserQueueController {
      */
     @GetMapping("/allowed")
     public Mono<AllowedUserResponse> isAllowedUser(@RequestParam(name = "queue", defaultValue = "default") String queue,
-                                                   @RequestParam(name = "user-id") Long userId) {
-        return userQueueService.isAllowed(queue, userId)
+                                                   @RequestParam(name = "user-id") Long userId,
+                                                   @RequestParam(name = "token") String token) {
+        return userQueueService.isAllowedByToken(queue, userId, token)
                 .map(AllowedUserResponse::new);
     }
 
@@ -71,5 +76,29 @@ public class UserQueueController {
                                                  @RequestParam(name = "user-id") Long userId) {
         return userQueueService.getQueueStatus(queue, userId)
                 .map(QueueStatusResponse::new);
+    }
+
+    /**
+     * 토큰 생성 후 쿠키 저장
+     *
+     * @param queue 큐 이름
+     * @param userId 사용자 ID
+     * @param exchange HTTP 요청
+     * @return 토큰
+     */
+    @GetMapping("/touch")
+    public Mono<String> touch(@RequestParam(name = "queue", defaultValue = "default") String queue,
+                              @RequestParam(name = "user-id") Long userId,
+                              ServerWebExchange exchange) {
+        return Mono.defer(() -> userQueueService.generateToken(queue, userId))
+                .map(token -> {
+                    exchange.getResponse().addCookie(
+                            ResponseCookie.from("user-queue-%s-token".formatted(queue), token)
+                                    .maxAge(Duration.ofSeconds(300))
+                                    .path("/")
+                                    .build()
+                    );
+                    return token;
+                });
     }
 }

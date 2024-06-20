@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -73,30 +73,33 @@
               const userId = '[[${userId}]]';
               const queryParam = new URLSearchParams({'queue': queue, 'user-id': userId});
               fetch('/api/v1/queue/progress?' + queryParam)
-                    .then(response => response.json())
-                    .then(data => {
-                        if(data.queueFront < 0) {
-                          document.querySelector('#queueFront').innerHTML = 0;
-                          document.querySelector('#updated').innerHTML = new Date();
-
-                          const newUrl = window.location.origin + window.location.pathname + window.location.search;
-                          window.location.href = newUrl;
-                          return;
-                        }
-
-                        document.querySelector('#queueFront').innerHTML = data.queueFront;
-                        document.querySelector('#queueBack').innerHTML = data.queueBack;
+              .then(response => response.json())
+              .then(data => {
+                if(data.queueFront < 0) {
+                    fetch('/api/v1/queue/touch?' + queryParam)
+                    .then(response => {
+                        document.querySelector('#queueFront').innerHTML = 0;
                         document.querySelector('#updated').innerHTML = new Date();
 
-                        const progress = data.progress;
-                        progressElement.style.width = progress + '%';
+                        const newUrl = window.location.origin + window.location.pathname + window.location.search;
+                        window.location.href = newUrl;
                     })
-                    .catch(error => console.error('Error:', error));
-            }
+                    .catch(error => console.error(error));
+                    return;
+                }
+                document.querySelector('#queueFront').innerHTML = data.queueFront;
+                document.querySelector('#queueBack').innerHTML = data.queueBack;
+                document.querySelector('#updated').innerHTML = new Date();
+
+                const progress = data.progress;
+                progressElement.style.width = progress + '%';
+            })
+              .catch(error => console.error('Error:', error));
+          }
 
             // 동적으로 로딩바를 업데이트
-            setInterval(updateProgress, 3000);
-        });
+          setInterval(updateProgress, 3000);
+      });
     </script>
 </head>
 <body>
