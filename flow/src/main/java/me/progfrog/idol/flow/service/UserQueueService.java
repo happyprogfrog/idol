@@ -172,7 +172,7 @@ public class UserQueueService {
      * @param userRank 사용자의 대기 번호
      * @return 진행률(0 ~ 100)
      */
-    private double calculateProgress(Long userRank) {
+    private double calculateProgress(final Long userRank) {
         if (userRank <= 0) {
             return 100.0;
         }
