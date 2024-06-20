@@ -125,4 +125,28 @@ class UserQueueServiceTest {
                 .expectNext(true)
                 .verifyComplete();
     }
+
+    @Test
+    @DisplayName("isNotAllowedByToken: 토큰이 맞지않으면 진입 미허용")
+    void isNotAllowedByToken() {
+        StepVerifier.create(userQueueService.isAllowedByToken("default", 101L, ""))
+                .expectNext(false)
+                .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("isAllowedByToken: 토큰이 맞으면 진입 허용")
+    void isAllowedByToken() {
+        StepVerifier.create(userQueueService.isAllowedByToken("default", 101L, "bf00fd9ec300129861628c5a13e9507bb8b3dc6603f3bc8dd978b709c1146dff"))
+                .expectNext(true)
+                .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("generateToken: 토큰 생성 확인")
+    void generateToken() {
+        StepVerifier.create(userQueueService.generateToken("default", 101L))
+                .expectNext("bf00fd9ec300129861628c5a13e9507bb8b3dc6603f3bc8dd978b709c1146dff")
+                .verifyComplete();
+    }
 }
