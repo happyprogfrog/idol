@@ -23,9 +23,10 @@ public class UserQueueController {
      * @return 대기 번호가 담긴 dto
      */
     @PostMapping
-    public Mono<RegisterUserResponse> registerUser(@RequestParam(name = "user-id") Long userId) {
+    public Mono<RegisterUserResponse> registerUser(@RequestParam(name = "queue", defaultValue = "default") String queue,
+                                                   @RequestParam(name = "user-id") Long userId) {
 
-        return userQueueService.registerWaitQueue(userId)
+        return userQueueService.registerWaitQueue(queue, userId)
                 .map(RegisterUserResponse::new);
     }
 }
