@@ -3,6 +3,7 @@ package me.progfrog.idol.flow.controller;
 import lombok.RequiredArgsConstructor;
 import me.progfrog.idol.flow.dto.AllowUserResponse;
 import me.progfrog.idol.flow.dto.AllowedUserResponse;
+import me.progfrog.idol.flow.dto.QueueStatusResponse;
 import me.progfrog.idol.flow.dto.RegisterUserResponse;
 import me.progfrog.idol.flow.service.UserQueueService;
 import org.springframework.web.bind.annotation.*;
@@ -56,5 +57,19 @@ public class UserQueueController {
                                                    @RequestParam(name = "user-id") Long userId) {
         return userQueueService.isAllowed(queue, userId)
                 .map(AllowedUserResponse::new);
+    }
+
+    /**
+     * 사용자의 대기 번호 조회
+     *
+     * @param queue 대기 큐 이름
+     * @param userId 사용자 ID
+     * @return 대기 번호가 담긴 dto
+     */
+    @GetMapping("/progress")
+    public Mono<QueueStatusResponse> getProgress(@RequestParam(name = "queue", defaultValue = "default") String queue,
+                                                 @RequestParam(name = "user-id") Long userId) {
+        return userQueueService.getQueueStatus(queue, userId)
+                .map(QueueStatusResponse::new);
     }
 }
