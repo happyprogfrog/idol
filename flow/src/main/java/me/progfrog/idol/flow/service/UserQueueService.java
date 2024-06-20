@@ -113,11 +113,11 @@ public class UserQueueService {
     }
 
     /**
-     * 뷰에 필요한 데이터를 전달
+     * 입장 대기 시에 필요한 데이터를 전달
      *
      * @param queue 큐 이름
      * @param userId 사용자 ID
-     * @return 사용자의 대기 번호, 전체 인원, 진행률(0 ~ 100)
+     * @return 사용자의 대기 번호, 전체 인원, 진행률
      */
     public Mono<QueueStatusDto> registerWaitingQueueOrGetQueueStatus(final String queue, final Long userId) {
         var unixTimestamp = Instant.now().getEpochSecond();
@@ -144,12 +144,12 @@ public class UserQueueService {
     }
 
     /**
-     * 뷰에 필요한 데이터를 전달
+     * 입장 대기 시에 필요한 데이터를 전달
      * 단, 큐에 등록하는 로직 없음
      *
      * @param queue 큐 이름
      * @param userId 사용자 ID
-     * @return 사용자의 대기 번호, 전체 인원, 진행률(0 ~ 100)
+     * @return 사용자의 대기 번호, 전체 인원, 진행률
      */
     public Mono<QueueStatusDto> getQueueStatus(final String queue, final Long userId) {
         Mono<Long> userRankMono = getRank(queue, userId);
@@ -170,7 +170,7 @@ public class UserQueueService {
      * 진행률 계산하기
      *
      * @param userRank 사용자의 대기 번호
-     * @return 진행률 (0 ~ 100)
+     * @return 진행률(0 ~ 100)
      */
     private double calculateProgress(Long userRank) {
         if (userRank <= 0) {
@@ -180,6 +180,9 @@ public class UserQueueService {
         return 100.0 / userRank.doubleValue();
     }
 
+    /**
+     * 스케줄러
+     */
     @Scheduled(initialDelay = 5000, fixedDelay = 3000)
     public void scheduleAllowUser() {
         if (!scheduling) {
@@ -189,7 +192,7 @@ public class UserQueueService {
 
         log.info("called scheduling...");
 
-        // 대기 큐가 여러 개 있는 상황을 고려해서, 사용자 입장을 허용하는 코드 작성
+        // 대기 큐가 여러 개 있는 상황을 고려해서, 사용자를 대기에서 입장 가능 상태로 전환하도록 코드 작성
         var maxAllowUserCount = 3L;
         reactiveRedisTemplate.scan(
                 ScanOptions

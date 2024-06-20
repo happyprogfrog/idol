@@ -60,11 +60,11 @@ public class UserQueueController {
     }
 
     /**
-     * 사용자의 대기 번호 조회
+     * 입장 대기 시 필요한 정보 내려주기
      *
      * @param queue 대기 큐 이름
      * @param userId 사용자 ID
-     * @return 대기 번호가 담긴 dto
+     * @return 사용자 앞/뒤 인원 및 진행률이 담긴 dto
      */
     @GetMapping("/progress")
     public Mono<QueueStatusResponse> getProgress(@RequestParam(name = "queue", defaultValue = "default") String queue,

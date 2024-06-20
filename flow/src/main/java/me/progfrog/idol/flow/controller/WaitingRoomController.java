@@ -38,7 +38,6 @@ public class WaitingRoomController {
                                     .modelAttribute("queueFront", res.queueFront())
                                     .modelAttribute("queueBack", res.queueBack())
                                     .modelAttribute("progress", res.progress())
-                                    .modelAttribute("waitingTime", "10분 00초")
                                     .build();
                         }));
     }
