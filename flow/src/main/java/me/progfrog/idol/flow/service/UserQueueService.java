@@ -1,6 +1,7 @@
 package me.progfrog.idol.flow.service;
 
 import lombok.RequiredArgsConstructor;
+import me.progfrog.idol.flow.exception.ErrorCode;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -27,7 +28,7 @@ public class UserQueueService {
         var unixTimestamp = Instant.now().getEpochSecond();
         return reactiveRedisTemplate.opsForZSet().add(USER_QUEUE_WAIT_KEY.formatted(queue), userId.toString(), unixTimestamp)
                 .filter(i -> i)
-                .switchIfEmpty(Mono.error(new Exception("이미 대기열에 등록된 사용자 입니다.")))
+                .switchIfEmpty(Mono.error(ErrorCode.QUEUE_ALREADY_REGISTERED_USER.build()))
                 .flatMap(i -> reactiveRedisTemplate.opsForZSet().rank(USER_QUEUE_WAIT_KEY.formatted(queue), userId.toString()))
                 .map(rank -> rank >= 0 ? rank + 1 : rank);
     }
